@@ -38,12 +38,15 @@ def evaluate(model, loader, criterion):
         total_loss += loss.item()
         all_preds.extend(outputs.argmax(dim=1).cpu().numpy())
         all_targets.extend(targets.cpu().numpy())
-    macro_f1 = f1_score(all_targets, all_preds, average='macro')
+    macro_f1 = f1_score(all_targets, all_preds, average='macro', zero_division=0)
     acc = np.mean(np.array(all_preds) == np.array(all_targets))
     return total_loss / len(loader), acc, macro_f1
 
-def train_model(epochs=15, lr=1e-4, loss_type="ce"):
+def train_model(epochs=15, lr=1e-4, loss_type="ce", save_dir="results/exp"):
     set_seed(42)
+    save_path = Path(save_dir)
+    save_path.mkdir(parents=True, exist_ok=True)
+
     print(f"Training on device: {DEVICE}")
     train_loader, val_loader, _ = get_dataloaders()
     model = get_model(num_classes=7, pretrained=True).to(DEVICE)
@@ -51,10 +54,19 @@ def train_model(epochs=15, lr=1e-4, loss_type="ce"):
     criterion = get_loss_fn(loss_type, device=DEVICE)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     
+    best_macro_f1 = 0.0
     for epoch in range(1, epochs + 1):
         tr_loss = train_one_epoch(model, train_loader, criterion, optimizer)
         val_loss, val_acc, val_f1 = evaluate(model, val_loader, criterion)
         print(f"Epoch {epoch:2d}/{epochs:2d} | Train Loss: {tr_loss:.4f} | Val Loss: {val_loss:.4f} | Val Acc: {val_acc*100:5.2f}% | Val Macro F1: {val_f1:6.4f}")
+
+        if val_f1 > best_macro_f1:
+            best_macro_f1 = val_f1
+            torch.save(
+                {'epoch': epoch, 'model_state_dict': model.state_dict(), 'val_macro_f1': val_f1},
+                save_path / "best_model.pth"
+            )
+            print(f"  [+] New best checkpoint saved at epoch {epoch} (Val Macro F1: {val_f1:.4f})")
 
 if __name__ == "__main__":
     train_model()
