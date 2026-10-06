@@ -1,13 +1,15 @@
 """
-train.py - Training script for ResNet-50 on HAM10000.
+train.py - Training Pipeline for ResNet-50 on HAM10000.
 """
 import torch
 import torch.nn as nn
 import numpy as np
 from pathlib import Path
+from sklearn.metrics import f1_score
 
 from data import get_dataloaders, set_seed
 from models.resnet import get_model
+from losses import get_loss_fn
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -36,22 +38,23 @@ def evaluate(model, loader, criterion):
         total_loss += loss.item()
         all_preds.extend(outputs.argmax(dim=1).cpu().numpy())
         all_targets.extend(targets.cpu().numpy())
+    macro_f1 = f1_score(all_targets, all_preds, average='macro')
     acc = np.mean(np.array(all_preds) == np.array(all_targets))
-    return total_loss / len(loader), acc
+    return total_loss / len(loader), acc, macro_f1
 
-def train_model(epochs=15, lr=1e-4):
+def train_model(epochs=15, lr=1e-4, loss_type="ce"):
     set_seed(42)
     print(f"Training on device: {DEVICE}")
     train_loader, val_loader, _ = get_dataloaders()
     model = get_model(num_classes=7, pretrained=True).to(DEVICE)
     
-    criterion = nn.CrossEntropyLoss()
+    criterion = get_loss_fn(loss_type, device=DEVICE)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     
     for epoch in range(1, epochs + 1):
         tr_loss = train_one_epoch(model, train_loader, criterion, optimizer)
-        val_loss, val_acc = evaluate(model, val_loader, criterion)
-        print(f"Epoch {epoch} | Train Loss: {tr_loss:.4f} | Val Loss: {val_loss:.4f} | Val Acc: {val_acc*100:.2f}%")
+        val_loss, val_acc, val_f1 = evaluate(model, val_loader, criterion)
+        print(f"Epoch {epoch:2d}/{epochs:2d} | Train Loss: {tr_loss:.4f} | Val Loss: {val_loss:.4f} | Val Acc: {val_acc*100:5.2f}% | Val Macro F1: {val_f1:6.4f}")
 
 if __name__ == "__main__":
     train_model()
