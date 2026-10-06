@@ -3,6 +3,7 @@ train.py - Training script for ResNet-50 on HAM10000.
 """
 import torch
 import torch.nn as nn
+import numpy as np
 from pathlib import Path
 
 from data import get_dataloaders, set_seed
@@ -23,6 +24,21 @@ def train_one_epoch(model, loader, criterion, optimizer):
         total_loss += loss.item()
     return total_loss / len(loader)
 
+@torch.no_grad()
+def evaluate(model, loader, criterion):
+    model.eval()
+    total_loss = 0.0
+    all_preds, all_targets = [], []
+    for images, targets in loader:
+        images, targets = images.to(DEVICE), targets.to(DEVICE)
+        outputs = model(images)
+        loss = criterion(outputs, targets)
+        total_loss += loss.item()
+        all_preds.extend(outputs.argmax(dim=1).cpu().numpy())
+        all_targets.extend(targets.cpu().numpy())
+    acc = np.mean(np.array(all_preds) == np.array(all_targets))
+    return total_loss / len(loader), acc
+
 def train_model(epochs=15, lr=1e-4):
     set_seed(42)
     print(f"Training on device: {DEVICE}")
@@ -34,7 +50,8 @@ def train_model(epochs=15, lr=1e-4):
     
     for epoch in range(1, epochs + 1):
         tr_loss = train_one_epoch(model, train_loader, criterion, optimizer)
-        print(f"Epoch {epoch} | Train Loss: {tr_loss:.4f}")
+        val_loss, val_acc = evaluate(model, val_loader, criterion)
+        print(f"Epoch {epoch} | Train Loss: {tr_loss:.4f} | Val Loss: {val_loss:.4f} | Val Acc: {val_acc*100:.2f}%")
 
 if __name__ == "__main__":
     train_model()
