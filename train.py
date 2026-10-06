@@ -52,7 +52,8 @@ def train_model(epochs=15, lr=1e-4, loss_type="ce", save_dir="results/exp"):
     model = get_model(num_classes=7, pretrained=True).to(DEVICE)
     
     criterion = get_loss_fn(loss_type, device=DEVICE)
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-2)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
     
     best_macro_f1 = 0.0
     for epoch in range(1, epochs + 1):
