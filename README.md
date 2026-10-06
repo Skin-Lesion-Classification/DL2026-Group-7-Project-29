@@ -123,6 +123,3 @@ Extracted directly from actual trained checkpoint outputs (`results/comparison.c
 
 ---
 
-## 📄 Reports & Presentation Slides
-- **Monograph Report (PDF)**: `results/report.pdf` (11 pages, complete with mathematical formulas, comparison tables, and clinical analysis).
-- **Presentation Slides (PPTX)**: `results/ppt.pptx` (4 slides structured for project defense).
