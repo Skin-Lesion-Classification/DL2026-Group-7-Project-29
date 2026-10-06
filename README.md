@@ -5,111 +5,111 @@
 [![Dataset](https://img.shields.io/badge/Dataset-HAM10000-green.svg)](https://www.kaggle.com/datasets/kmader/skin-cancer-mnist-ham10000)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Hệ thống Deep Learning phân loại tổn thương sắc tố da trên 7 nhóm bệnh da liễu (tập dữ liệu HAM10000), nghiên cứu và khắc phục triệt để hiện tượng mất cân bằng dữ liệu nghiêm trọng (Severe Class Imbalance: lớp đa số NV chiếm 66.95%, lớp thiểu số DF chỉ 1.15%).
+A Deep Learning system for skin lesion classification across 7 dermatological disease categories (using the HAM10000 dataset), addressing severe class imbalance (where the majority class `nv` accounts for 66.95% and the minority class `df` only 1.15%).
 
 ---
 
-## 📌 Tổng Quan Đề Tài (Project Overview)
-- **Mục tiêu**: Xây dựng mô hình ResNet-50 phân loại ảnh da liễu dermatoscopic, thực nghiệm và so sánh có hệ thống các kỹ thuật giải quyết mất cân bằng lớp, tập trung vào hai chỉ số then chốt là **Macro F1** và **Balanced Accuracy**.
-- **Không rò rỉ dữ liệu (Zero Data Leakage)**: Phân tách tập Train / Val / Test (70% - 15% - 15%) dựa trên `lesion_id` qua `StratifiedGroupKFold`. Đảm bảo ảnh cùng một tổn thương của một bệnh nhân không bao giờ xuất hiện đồng thời ở nhiều tập.
-- **5 Cấu hình Thực nghiệm Ablation**:
+## 📌 Project Overview
+- **Objective**: Build a ResNet-50 model for dermatoscopic image classification, systematically experimenting with and comparing techniques to resolve class imbalance, focusing on two key metrics: **Macro F1** and **Balanced Accuracy**.
+- **Zero Data Leakage**: Split Train / Val / Test sets (70% - 15% - 15%) based on `lesion_id` using `StratifiedGroupKFold`. This ensures images of the same lesion from the same patient never overlap across splits.
+- **5 Ablation Configurations**:
   1. **Baseline**: Cross-Entropy Loss + Random Sampling + Basic Augmentation.
-  2. **Sampling Ablation**: Weighted Random Sampler (nghịch đảo tần suất lớp).
+  2. **Sampling Ablation**: Weighted Random Sampler (inverse class frequency).
   3. **Loss Function Ablation**: Focal Loss ($\gamma = 2.0$).
   4. **Data Augmentation Ablation**: Color Jitter + Random Affine + Rotation.
-  5. **Combined Strategy**: Kết hợp Weighted Sampling + Focal Loss + Data Augmentation.
+  5. **Combined Strategy**: Combination of Weighted Sampling + Focal Loss + Data Augmentation.
 
 ---
 
-## 📂 Cấu Trúc Dự Án (Project Structure)
+## 📂 Project Structure
 ```text
 skin-lesion-classification/
-├── data/                       # Dữ liệu ảnh HAM10000 và file metadata
-│   ├── HAM10000_metadata.csv   # Thông tin lâm sàng (lesion_id, dx, age, sex,...)
-│   ├── splits.csv              # File chia tập chuẩn (Zero-Leakage Grouped Split)
-│   └── images/                 # 10,015 ảnh dermatoscopic JPG
+├── data/                       # HAM10000 image data and metadata files
+│   ├── HAM10000_metadata.csv   # Clinical metadata (lesion_id, dx, age, sex, etc.)
+│   ├── splits.csv              # Standard split file (Zero-Leakage Grouped Split)
+│   └── images/                 # 10,015 dermatoscopic JPG images
 ├── models/
 │   ├── __init__.py
-│   └── resnet.py               # Kiến trúc mạng ResNet-50 phân loại 7 lớp
-├── results/                    # Checkpoint trọng số mô hình và báo cáo
+│   └── resnet.py               # ResNet-50 network architecture for 7-class classification
+├── results/                    # Model weight checkpoints and reports
 │   ├── baseline/best_model.pth
 │   ├── weighted_sampling/best_model.pth (Best Model Checkpoint)
 │   ├── focal_loss/best_model.pth
 │   ├── augmentation/best_model.pth
 │   ├── combined/best_model.pth
-│   ├── comparison.csv          # Bảng tổng hợp so sánh 5 cấu hình
-│   ├── comparison_chart.png    # Biểu đồ cột so sánh trực quan các chỉ số
-│   ├── per_class_recall_comparison.png # So sánh độ nhạy trên các lớp hiếm
-│   ├── confusion_matrix_test.png       # Ma trận nhầm lẫn trên tập Test
-│   ├── report.pdf              # Báo cáo học thuật chi tiết 11 trang
-│   └── ppt.pptx                # Slide thuyết trình bảo vệ 4 trang chuẩn cấu trúc
-├── data.py                     # Quản lý Dataset, Transforms, Grouped K-Fold split
-├── losses.py                   # Triển khai Cross-Entropy, Focal Loss, Class-Balanced Loss
-├── train.py                    # Pipeline huấn luyện, scheduler, checkpointing
-├── test.py                     # Script kiểm thử chính thức trên 1,431 ảnh tập Test
-├── predict.py                  # Script dự đoán trực tiếp 1 ảnh không cần web server
-├── main.py                     # Điểm thực thi chính (hỗ trợ dự đoán trực tiếp & kiểm thử)
-├── experiments.py              # Runner tự động chạy và đánh giá benchmark
-├── DATA.md                     # Tài liệu chi tiết về đặc tả dữ liệu và quy trình chuẩn bị
-├── requirements.txt            # Danh sách thư viện phụ thuộc
-└── README.md                   # Hướng dẫn sử dụng và báo cáo tổng quan
+│   ├── comparison.csv          # Summary table comparing all 5 configurations
+│   ├── comparison_chart.png    # Visual bar chart comparing metrics
+│   ├── per_class_recall_comparison.png # Recall comparison on rare classes
+│   ├── confusion_matrix_test.png       # Confusion matrix on the Test set
+│   ├── report.pdf              # Detailed 11-page academic report
+│   └── ppt.pptx                # 4-slide structured presentation deck
+├── data.py                     # Dataset management, transforms, Grouped K-Fold split
+├── losses.py                   # Implementations of Cross-Entropy, Focal Loss, Class-Balanced Loss
+├── train.py                    # Training pipeline, scheduler, checkpointing
+├── test.py                     # Official testing script on the 1,431 test images
+├── predict.py                  # Direct single-image inference script (no web server needed)
+├── main.py                     # Main execution entrypoint (supports direct prediction & testing)
+├── experiments.py              # Automated runner for benchmark evaluation
+├── DATA.md                     # Detailed data specification and preparation pipeline docs
+├── requirements.txt            # Python library dependencies
+└── README.md                   # User guide and overview report
 ```
 
 ---
 
-## ⚙️ Cài Đặt Môi Trường (Installation)
+## ⚙️ Environment Setup
 
 ```bash
-# 1. Kích hoạt môi trường Python (Python 3.10+)
+# 1. Activate Python environment (Python 3.10+)
 python -m venv venv
 
 # Windows PowerShell:
 .\venv\Scripts\activate
 
-# 2. Cài đặt các thư viện phụ thuộc
+# 2. Install dependencies
 pip install -r requirements.txt
 ```
 
 ---
 
-## 🚀 Hướng Dẫn Sử Dụng (Quick Start)
+## 🚀 Quick Start
 
-### 1. Kiểm thử mô hình trên toàn bộ tập Test (Chuẩn đề bài)
-Chạy kiểm định mô hình tốt nhất (`Weighted Sampling`) trên toàn bộ 1,431 ảnh kiểm thử độc lập (không rò rỉ dữ liệu). Tự động in bảng chỉ số tổng quan, bảng chi tiết từng lớp và lưu biểu đồ ma trận nhầm lẫn:
+### 1. Test Model on Full Test Set (Standard Benchmark)
+Run evaluation of the best model (`Weighted Sampling`) across all 1,431 independent test images (zero data leakage). This automatically prints the summary metrics table, per-class details, and saves the confusion matrix chart:
 ```bash
 python test.py
 ```
-*(Chỉ định checkpoint tùy chọn nếu muốn so sánh cấu hình khác)*:
+*(Optional: specify another checkpoint to compare configurations)*:
 ```bash
 python test.py --checkpoint results/baseline/best_model.pth
 ```
 
-### 2. Dự đoán trực tiếp ảnh tổn thương da (Không cần Web Server)
-Nhập đường dẫn trực tiếp của một file ảnh JPG bất kỳ, script sẽ lập tức tiền xử lý, tính toán phân phối xác suất trên toàn bộ 7 loại bệnh, đưa ra chẩn đoán có xác suất cao nhất cùng mức độ rủi ro lâm sàng:
+### 2. Direct Skin Lesion Prediction (No Web Server Required)
+Input the path to any JPG image file, and the script will immediately preprocess it, calculate probability distributions across all 7 disease categories, and output the top prediction with its clinical risk level:
 ```bash
-# Dự đoán một ảnh cụ thể:
+# Predict a specific image:
 python predict.py --image data/images/ISIC_0024306.jpg
 
-# Hoặc chạy kiểm tra nhanh một ảnh ngẫu nhiên trong dataset:
+# Or quickly test a random image from the dataset:
 python predict.py
 ```
 
-### 3. Thực thi nhanh qua `main.py`
+### 3. Quick Execution via `main.py`
 ```bash
-# Dự đoán ảnh:
+# Predict an image:
 python main.py --image data/images/ISIC_0026273.jpg
 
-# Hoặc chạy kiểm thử tập test:
+# Or run test set evaluation:
 python main.py --test
 ```
 
 ---
 
-## 📈 Kết Quả Thực Nghiệm Thực Tế (Benchmark Results)
+## 📈 Empirical Benchmark Results
 
-Được trích xuất trực tiếp từ các file checkpoint đã huấn luyện thực tế (`results/comparison.csv`):
+Extracted directly from actual trained checkpoint outputs (`results/comparison.csv`):
 
-| Cấu Hình Thực Nghiệm | Loss Function | Chiến Lược Lấy Mẫu | Kỹ Thuật Augmentation | Accuracy | Balanced Acc | Macro F1 (Trọng Tâm) | Weighted F1 | Macro Recall |
+| Experimental Configuration | Loss Function | Sampling Strategy | Augmentation Technique | Accuracy | Balanced Acc | Macro F1 (Key Focus) | Weighted F1 | Macro Recall |
 | :--- | :--- | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
 | **Baseline** | Cross-Entropy | Random | Basic Flip | 83.23% | 58.29% | 0.6197 | 0.8221 | 58.29% |
 | **Weighted Sampling** | **Cross-Entropy** | **Weighted Random** | **Basic Flip** | **78.48%** | **68.86%** | **0.6905** | **0.7996** | **68.86%** |
@@ -117,12 +117,12 @@ python main.py --test
 | **Data Augmentation** | Cross-Entropy | Random | Color + Affine | 81.48% | 57.59% | 0.5922 | 0.8033 | 57.59% |
 | **Combined Strategy** | Focal ($\gamma=2$) | Weighted Random | Color + Affine | 68.48% | 67.61% | 0.5845 | 0.7157 | 67.61% |
 
-### Nhận định then chốt từ thực nghiệm:
-1. **Bẫy Accuracy thông thường**: Cấu hình Baseline đạt Accuracy cao (83.23%) nhưng chủ yếu do học vẹt lớp chiếm đa số (`nv` chiếm 67% dữ liệu). Balanced Accuracy chỉ đạt 58.29%, nhiều ca ung thư ác tính (`mel`, `bcc`) bị bỏ sót.
-2. **Hiệu quả vượt bậc của Weighted Sampling**: Đạt **Macro F1 cao nhất (0.6905)** và **Balanced Accuracy cao nhất (68.86%)**, cải thiện độ nhạy phát hiện ung thư tế bào đáy (`bcc`) lên **79.73%** và ung thư hắc tố (`mel`) lên **66.67%**.
+### Key Experimental Insights:
+1. **The Traditional Accuracy Trap**: The Baseline configuration achieved high Accuracy (83.23%) mostly by overfitting to the majority class (`nv` representing 67% of data). Its Balanced Accuracy reached only 58.29%, missing many malignant cancer cases (`mel`, `bcc`).
+2. **Superior Performance of Weighted Sampling**: Achieved the **highest Macro F1 (0.6905)** and **highest Balanced Accuracy (68.86%)**, improving sensitivity for detecting basal cell carcinoma (`bcc`) to **79.73%** and melanoma (`mel`) to **66.67%**.
 
 ---
 
-## 📄 Báo Cáo & Slide Bảo Vệ
-- **Báo cáo chuyên khảo PDF**: `results/report.pdf` (11 trang, đầy đủ công thức toán học, bảng so sánh và phân tích lâm sàng).
-- **Slide thuyết trình PPTX**: `results/ppt.pptx` (4 slides chuẩn theo cấu trúc bảo vệ môn học).
+## 📄 Reports & Presentation Slides
+- **Monograph Report (PDF)**: `results/report.pdf` (11 pages, complete with mathematical formulas, comparison tables, and clinical analysis).
+- **Presentation Slides (PPTX)**: `results/ppt.pptx` (4 slides structured for project defense).
